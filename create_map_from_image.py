@@ -288,8 +288,6 @@ if show_image:
 
 tile_data = generate_tile_data(im2)
 map_data = generate_map_data(tile_data)
-with open("map1.wbox","wb") as f:
-    f.write(zlib.compress(json.dumps(map_data).encode("utf8")))
 
 with open(output_file_path,"wb") as f:
     f.write(zlib.compress(json.dumps(map_data).encode("utf8")))

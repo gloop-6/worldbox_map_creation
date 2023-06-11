@@ -50,13 +50,13 @@ default_config = {
     "use_snow_mountains" : False,
     "use_water" : True,
     "show_image" : False,
-    "image_scale" : 1,
+    "image_scale" : [576,576],
     "input_file_path" : "test.png",
     "output_file_path" : "map.wbox",
     "laws" : laws,
     "ages" : ages, 
 }
-import zlib,os,json
+import zlib,os,json,sys
 from PIL import Image
 
 def generate_config_file():
@@ -68,7 +68,7 @@ def generate_config_file():
         "use_snow_mountains" : False,
         "use_water" : True,
         "show_image" : False,
-        "image_scale" : 1,
+        "image_scale" : [576,576],
         "input_file_path" : "test.png",
         "output_file_path" : "map.wbox",
         "laws" : laws,
@@ -201,8 +201,7 @@ def convert_image(image):
     p_img = Image.new('P', (16, 16))
     p_img.putpalette(palette_colors + [0]*(768 - len(palette_colors)))
     image = image.convert("RGB")
-    w,h = image.size
-    image = image.resize((int(w*image_scale),int(h*image_scale)))
+    image = image.resize(image_scale)
     w,h = image.size
     print(w,h)
     chunk_w,chunk_h = (w // CHUNK_SIZE),(h // CHUNK_SIZE)
@@ -255,6 +254,7 @@ def generate_tile_data(f):
     current_tiles={}
     amt = 0
     previous_tile = 0
+    print(f.size[0])
     for idx,tile in enumerate(reversed(data)):
 
         if int(idx%(len(data)/100))==0:
@@ -288,6 +288,8 @@ if show_image:
 
 tile_data = generate_tile_data(im2)
 map_data = generate_map_data(tile_data)
+with open("map1.wbox","wb") as f:
+    f.write(zlib.compress(json.dumps(map_data).encode("utf8")))
 
 with open(output_file_path,"wb") as f:
     f.write(zlib.compress(json.dumps(map_data).encode("utf8")))

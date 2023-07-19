@@ -1,4 +1,4 @@
-#by _gloop
+#by _gloop/gloop#5445
 config_file_path = "config.json"
 ages = {
     "hope" : "true",
@@ -52,7 +52,7 @@ default_config = {
     "show_image" : False,
     "image_scale" : [576,576],
     "input_file_path" : "test.png",
-    "output_file_path" : "map.wbox",
+    "output_file_path" : "C:\\Users\\Gabe\\AppData\\LocalLow\\mkarpenko\\WorldBox\\saves\\save6\\map.wbox",
     "laws" : laws,
     "ages" : ages, 
 }
@@ -98,86 +98,87 @@ if os.path.isfile(config_file_path):
     output_file_path = data["output_file_path"]
 else:
     generate_config_file()
-
-TILE_PALETTE = {
-    'hills': '5B5E5C',
+TILE_PALETTE={
+    'hills': '5b5e5c',
     'mountains': '414545',
-    'soil_high:frozen_low': 'bbcfc4',
-    'soil_low:frozen_high': 'bfd0cf',
-    'soil_high:permafrost_low': '9bc0d6',
-    'soil_low:permafrost_high': 'a6c1d8',
+    'soil_high:frozen_low': 'bad5d3',
+    'soil_low:frozen_high': 'd3e4e3',
+    'soil_high:permafrost_low': '8cacc8',
+    'soil_low:permafrost_high': 'adc7dc',
     'deep_ocean:snow_sand': '9bcfcc',
     'deep_ocean:ice': 'a2cce7',
-    'soil_high:tumor_low': 'eb4d80',
-    'soil_low:tumor_high': 'e62363',
-    'soil_high:biomass_low': '52c04c',
-    'soil_low:biomass_high': '57ac51',
-    'soil_high:pumpkin_low': '846f3b',
-    'soil_low:pumpkin_high': '797239',
+    'soil_high:tumor_low': 'ed5182',
+    'soil_low:tumor_high': 'fd1863',
+    'soil_high:biomass_low': '45c842',
+    'soil_low:biomass_high': '41a840',
+    'soil_high:pumpkin_low': '8f9339',
+    'soil_low:pumpkin_high': '696c02',
     'soil_high:cybertile_low': '9ea6a3',
-    'soil_low:cybertile_high': '848785',
-    'deep_ocean:road': 'c0987b',
-    'deep_ocean:fuse': '834c4c',
-    'deep_ocean:field': 'a8663a',
-    'soil_high:jungle_low': '46a052',
+    'soil_low:cybertile_high': '858886',
+    'deep_ocean:road': 'bc9579',
+    'deep_ocean:fuse': '804a4a',
+    'deep_ocean:field': 'a16238',
+    'soil_high:jungle_low': '459d51',
     'soil_low:jungle_high': '1f7020',
-    'soil_high:swamp_low': '4d483e',
-    'soil_low:swamp_high': '443d33',
-    'soil_high:wasteland_low': '849371',
-    'soil_low:wasteland_high': '6c7759',
-    'soil_high:desert_low': 'e8c76e',
+    'soil_high:swamp_low': '4b473d',
+    'soil_low:swamp_high': '443e34',
+    'soil_high:wasteland_low': '7a8868',
+    'soil_low:wasteland_high': '677155',
+    'soil_high:desert_low': 'e5c56d',
     'soil_low:desert_high': 'e1ba5a',
-    'soil_high:crystal_low': '68eade',
-    'soil_low:crystal_high': '5fd6cb',
-    'soil_high:candy_low': 'ff96b0',
-    'soil_low:candy_high': 'fb87a4',
-    'soil_high:lemon_low': 'cfe570',
+    'soil_high:crystal_low': '60d8cd',
+    'soil_low:crystal_high': '5ccfc4',
+    'soil_high:candy_low': 'ed8ba3',
+    'soil_low:candy_high': 'f0819d',
+    'soil_high:lemon_low': 'cee470',
     'soil_low:lemon_high': '8acf55',
-    'soil_high:grass_low': '7eaf46',
-    'soil_low:grass_high': '5f833c',
-    'soil_high:savanna_low': 'f0b121',
-    'soil_low:savanna_high': 'cf931b',
-    'soil_high:enchanted_low': '89d868',
-    'soil_low:enchanted_high': '75af52',
-    'soil_high:mushroom_low': '677542',
+    'soil_high:grass_low': '77a542',
+    'soil_low:grass_high': '536137',
+    'soil_high:savanna_low': 'daa11e',
+    'soil_low:savanna_high': 'c58c1a',
+    'soil_high:enchanted_low': '87d566',
+    'soil_low:enchanted_high': '74af52',
+    'soil_high:mushroom_low': '63713f',
     'soil_low:mushroom_high': '556338',
-    'soil_high:corrupted_low': '6f556c',
-    'soil_low:corrupted_high': '533f51',
-    'soil_high:infernal_low': '9c3626',
-    'soil_low:infernal_high': '68372d',
-    'sand': 'e2934b',
-    'soil_low': 'b66f3a',
-    'soil_high': 'f62d14',
-    'lava0': 'f62d14',
-    'lava1': 'ff6700',
-    'lava2': 'ffac00',
-    'lava3': 'ffde00'
+    'soil_high:corrupted_low': '6a5268',
+    'soil_low:corrupted_high': '523e50',
+    'soil_high:infernal_low': '963425',
+    'soil_low:infernal_high': '67362c',
+    'sand': 'f2e395',
+    'soil_low': 'e2934b',
+    'soil_high': 'b66f3a',
+    'lava0': 'fc4921',
+    'lava1': 'fda800',
+    'lava2': 'fdfd00',
+    'lava3': 'fdfd00'
 }
+
 if use_grey_goo:
     TILE_PALETTE|={
-        'grey_goo': '5d6191'
+        'grey_goo': '575b88'
     }
 if use_explosives:
     TILE_PALETTE|={
-        'soil_low:tnt': 'a30000',
-        'soil_low:fireworks': 'b43dcc',
-        'soil_low:tnt_timed': '7f0000',
+        'soil_low:tnt': 'a00000',
+        'soil_low:fireworks': 'b23cca',
+        'soil_low:tnt_timed': '7e0000',
         'soil_low:landmine': '990000',
     }
+
 if use_water_bomb:
     TILE_PALETTE|={
-    'soil_low:water_bomb': '6800c4',     
+    'soil_low:water_bomb': '6d00cc',     
     }
 if use_water:
     TILE_PALETTE|={
-        'deep_ocean': '4084e2',
+        'deep_ocean': '3370cc',
         'close_ocean': '4084e2',
         'shallow_waters': '55aef0',
         'pit_deep_ocean': '898989',
         'pit_close_ocean': 'a0a0a0',
         'pit_shallow_waters': 'c1c1c1',
-        'border_water': '4084e2',
-        'border_pit': '4084e2',
+        'border_water': '3370cc',
+        'border_pit': '3370cc',
     }
 if use_snow_mountains:
     TILE_PALETTE|={

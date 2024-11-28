@@ -6,7 +6,10 @@
     "use_snow_mountains": false,
     "use_water": true,
     "show_image": false,
-    "image_scale": 1,
+	"image_scale": [
+			576,
+			576
+		],
     "input_file_path": "test.png",
     "output_file_path": "map.wbox",
     "laws": {

@@ -1,6 +1,6 @@
 #by _gloop/gloop#5445
 config_file_path = "config.json"
-ages = {
+ages = { #this, and all the big dictionaries like it, should be an enum
     "hope" : "true",
     "sun" : "false",
     "dark" : "false",
@@ -12,7 +12,7 @@ ages = {
     "ash" : "false",
     "despair" : "false"
 }
-laws = {
+laws = { #especially once i bother to add structures
     #==Vegetation==#
     "grow_trees" : "false",
     "grow_grass" : "false",
@@ -52,7 +52,7 @@ default_config = {
     "show_image" : False,
     "image_scale" : [576,576],
     "input_file_path" : "test.png",
-    "output_file_path" : "C:\\Users\\Gabe\\AppData\\LocalLow\\mkarpenko\\WorldBox\\saves\\save6\\map.wbox",
+    "output_file_path" : r"C:\Users\gloop\AppData\LocalLow\mkarpenko\WorldBox\saves\save6\map.wbox",
     "laws" : laws,
     "ages" : ages, 
 }
@@ -76,7 +76,6 @@ def generate_config_file():
     }
     with open(config_file_path,"w") as f:
         f.write(json.dumps(d,indent=4))
-        print("A")
 
 if os.path.isfile(config_file_path):
     with open(config_file_path) as f:
@@ -98,7 +97,8 @@ if os.path.isfile(config_file_path):
     output_file_path = data["output_file_path"]
 else:
     generate_config_file()
-TILE_PALETTE={
+
+TILE_PALETTE={ 
     'hills': '5b5e5c',
     'mountains': '414545',
     'soil_high:frozen_low': 'bad5d3',
@@ -153,7 +153,7 @@ TILE_PALETTE={
     'lava3': 'fdfd00'
 }
 
-if use_grey_goo:
+if use_grey_goo: #probably better to *remove* tiles from the tilemap if a flag isn't enabled
     TILE_PALETTE|={
         'grey_goo': '575b88'
     }
@@ -186,25 +186,21 @@ if use_snow_mountains:
         'mountains:snow_block': 'ffffff',
     }
 
-def hex_to_rgb(h):
+def hex_to_rgb(h:str) -> list[int,int,int]:
     l = [int(h[i : i + 2], 16) for i in range(0, 6, 2)]
     return l
-def rgb_to_hex(c):
-    if len(c):
-        return "".join(hex(i)[2:].rjust(2,"0") for i in c)
-    return ""
 
 tile_types,palette_colors = list(TILE_PALETTE.keys()),TILE_PALETTE.values()
 palette_colors = [hex_to_rgb(i) for i in palette_colors]
 palette_colors = [i for l in palette_colors for i in l]
 CHUNK_SIZE = 64
-def convert_image(image):
+
+def convert_image(image) -> tuple[Image.Image,int,int]:
     p_img = Image.new('P', (16, 16))
-    p_img.putpalette(palette_colors + [0]*(768 - len(palette_colors)))
+    p_img.putpalette(palette_colors + [0]*(768 - len(palette_colors))) 
     image = image.convert("RGB")
     image = image.resize(image_scale)
     w,h = image.size
-    print(w,h)
     chunk_w,chunk_h = (w // CHUNK_SIZE),(h // CHUNK_SIZE)
     size = (chunk_w * CHUNK_SIZE,chunk_h * CHUNK_SIZE)
     image = image.resize(size)
@@ -214,11 +210,14 @@ def convert_image(image):
     else:
         dither_mode = 0
     converted_image = image.quantize(palette=p_img, dither=dither_mode)
+    #applying a palette to an image with pillow is weird
+    #i'm not aware of a better way of doing it than this, and it's only done once so whatever
     return converted_image,chunk_w,chunk_h
 
 world_laws = [{"name": "world_law_"+k,"boolVal":v} for k,v in laws.items()]
 world_laws += [{"name": "age_"+k,"boolVal":v} for k,v in ages.items()]
-def generate_map_data(tile_data):
+
+def generate_map_data(tile_data) -> dict: #tf would i even hint json as
     tiles,tile_amounts = tile_data
     map_data = {
         "saveVersion":13,
@@ -238,24 +237,28 @@ def generate_map_data(tile_data):
     }
     return map_data
 
-def key_in_dict_tuple(n,d):
+def key_in_dict_tuple(n,d) -> bool: # ???
     return n in [i[0] for i in d.keys()]
-def get_index(n,d):
+def get_index(n,d): # what
     if key_in_dict_tuple(n,d):
         return max([i[1] for i in d.keys() if i[0]==n])
     return 0
-def progress_bar(length,n):
+
+def progress_bar(length:int,n:float) -> str:
     amount_complete = int(n*length)
     return "#"*amount_complete+("."*(length-(amount_complete)))
+
 def display_progress(n,total):
     print(f"{(n/total)*100:.0f}% Complete.. "+progress_bar(30,(n/total)),end=" \r")
-def generate_tile_data(f):
+
+def generate_tile_data(f:Image.Image) -> list: #why did i call this 'f'???????
+    #also i can NOT be bothered to hint this properly right now, i don't remember how this tilemap structure BS works
     data = [0]+list(f.getdata())
     tiles,tile_amounts = [],[]
     current_tiles={}
     amt = 0
     previous_tile = 0
-    print(f.size[0])
+    #this entire bit is evil, but so is the algorithm the game uses, so whatever ¯\_(ツ)_/¯
     for idx,tile in enumerate(reversed(data)):
 
         if int(idx%(len(data)/100))==0:
@@ -265,14 +268,14 @@ def generate_tile_data(f):
             tiles.append([i[0] for i in current_tiles.keys()])
             tile_amounts.append([i for i in current_tiles.values()])
             current_tiles = {}
-
+       
         tile_index = get_index(tile,current_tiles)
         if tile==previous_tile:
             amt+=1
         else:
             tile_index+=1
     
-        if (tile,tile_index) in current_tiles:
+        if (tile,tile_index) in current_tiles: #
             current_tiles[(tile,tile_index)]+=1
         else:
             current_tiles[(tile,tile_index)]=1
@@ -289,9 +292,7 @@ if show_image:
 
 tile_data = generate_tile_data(im2)
 map_data = generate_map_data(tile_data)
-with open("map1.wbox","wb") as f:
-    f.write(zlib.compress(json.dumps(map_data).encode("utf8")))
 
 with open(output_file_path,"wb") as f:
     f.write(zlib.compress(json.dumps(map_data).encode("utf8")))
-
+#for whatever reason there was a redundant file write here so it made two copies of it, no clue why

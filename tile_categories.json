@@ -1,0 +1,82 @@
+{ 
+	"Ground":{
+		"sand": true,
+		"soil_low": true,
+		"soil_high": true,
+		"hills": false,
+		"mountains": false,
+		"sand:snow_sand": true,
+		"hills:snow_block": false,
+		"mountains:snow_block": false
+	},
+	"Water":{
+		"pit_deep_ocean": false,
+		"pit_close_ocean": false,
+		"pit_shallow_waters": false,
+		"deep_ocean": true,
+		"close_ocean": true,
+		"shallow_waters": true,
+		"deep_ocean:ice": false
+	},
+	"Biome":{
+		"soil_low:grass_low": true,
+		"soil_high:grass_high": true,
+		"soil_low:savanna_low": true,
+		"soil_high:savanna_high": true,
+		"soil_low:mushroom_low": true,
+		"soil_high:mushroom_high": true,
+		"soil_low:enchanted_low": true,
+		"soil_high:enchanted_high": true,
+		"soil_low:corrupted_low": true,
+		"soil_high:corrupted_high": true,
+		"soil_low:swamp_low": true,
+		"soil_high:swamp_high": true,
+		"soil_low:infernal_low": true,
+		"soil_high:infernal_high": true,
+		"soil_low:jungle_low": true,
+		"soil_high:jungle_high": true,
+		"soil_low:candy_low": true,
+		"soil_high:candy_high": true,
+		"soil_low:desert_low": true,
+		"soil_high:desert_high": true,
+		"soil_low:crystal_low": true,
+		"soil_high:crystal_high": true,
+		"soil_low:lemon_low": true,
+		"soil_high:lemon_high": true,
+		"soil_low:permafrost_low": true,
+		"soil_high:permafrost_high": true,
+		"soil_low:frozen_low": true,
+		"soil_high:frozen_high": true,
+		"soil_low:wasteland_low": true,
+		"soil_high:wasteland_high": true
+	},
+	"Creep":{
+		"soil_low:tumor_low": true,
+		"soil_high:tumor_high": true,
+		"soil_low:biomass_low": true,
+		"soil_high:biomass_high": true,
+		"soil_low:pumpkin_low": true,
+		"soil_high:pumpkin_high": true,
+		"soil_low:cybertile_low": true,
+		"soil_high:cybertile_high": true
+	},
+	"Destructive":{
+		"lava0": true,
+		"lava1": true,
+		"lava2": true,
+		"lava3": true,
+		"grey_goo": false,
+		"soil_low:tnt": false,
+		"soil_low:fireworks": false,
+		"soil_low:tnt_timed": false,
+		"soil_low:landmine": false,
+		"soil_low:water_bomb": false
+	},
+	"Misc.":{
+		"soil_low:road": false,
+		"soil_low:fuse": false,
+		"soil_low:field": false,
+		"border_water": false,
+		"border_pit": false
+	}
+}

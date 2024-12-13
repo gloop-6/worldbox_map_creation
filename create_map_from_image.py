@@ -1,473 +1,329 @@
-import json,zlib,logging,sys
-from pathlib import Path
-from os import getenv,path
-from configparser import RawConfigParser
-from typing import Any
+#by _gloop/gloop#5445
+config_file_path = "config.json"
+ages = { #this, and all the big dictionaries like it, should be an enum
+    "hope" : "true",
+    "sun" : "false",
+    "dark" : "false",
+    "tears" : "false",
+    "moon" : "false",
+    "chaos" : "false",
+    "wonders" : "false",
+    "ice" : "false",
+    "ash" : "false",
+    "despair" : "false"
+}
+laws = { #especially once i bother to add structures
+    #==Vegetation==#
+    "grow_trees" : "false",
+    "grow_grass" : "false",
+    "vegetation_seeds" : "false",
+    "biome_overgrowth" : "false",
+    #==Animals==#
+    "animals_spawn" : "false",
+    "animals_babies" : "false",
+    "peaceful_monsters" : "false",
+    #==Disasters==#
+    "disasters_nature" : "false",
+    "disasters_other" : "false",
+    #==Civilizations==#
+    "angry_civilians" : "false",
+    "border_stealing" : "false",
+    "rebellions" : "false",
+    "civ_babies" : "false",
+    "civ_army" : "false",
+    "kingdom_expansion" : "false",
+    "civ_limit_population_100":"false",
+    #==Miscellaneous==#
+    "hunger" : "false",
+    "old_age" : "false",
+    "erosion" : "false",
+    "forever_tumor_creep" : "true",
+    "grow_minerals" : "false",
+    "forever_lava" : "true",
+}
+default_config = {
+    "use_explosives" : True,
+    "use_grey_goo" : False,
+    "use_dithering" : True,
+    "use_water_bomb" : False,
+    "use_snow_mountains" : False,
+    "use_water" : True,
+    "show_image" : False,
+    "image_scale" : [576,576],
+    "input_file_path" : "test.png",
+    "output_file_path" : r"C:\Users\gloop\AppData\LocalLow\mkarpenko\WorldBox\saves\save6\map.wbox",
+    "laws" : laws,
+    "ages" : ages, 
+}
+import zlib,os,json
 from PIL import Image
-from PIL.ImageQt import ImageQt
-from PyQt6 import QtWidgets as wdg
-from PyQt6 import QtCore as core
-from PyQt6.QtGui import QPixmap,QIcon
-import PyQt6.QtWidgets as wdg
 
-logger = logging.getLogger("Image_to_map")
-#i haven't really messed with logging before, this is just in case for now
-#will improve later
-logging.basicConfig(filename="imgtomap.log", encoding="utf-8",format="[%(levelname)s]:%(message)s", level=logging.DEBUG)
+def generate_config_file():
+    d={
+        "use_explosives" : True,
+        "use_grey_goo" : False,
+        "use_dithering" : True,
+        "use_water_bomb" : False,
+        "use_snow_mountains" : False,
+        "use_water" : True,
+        "show_image" : False,
+        "image_scale" : [576,576],
+        "input_file_path" : "test.png",
+        "output_file_path" : "map.wbox",
+        "laws" : laws,
+        "ages" : ages, 
+    }
+    with open(config_file_path,"w") as f:
+        f.write(json.dumps(d,indent=4))
 
-PREVIEW_SIZE = 200,200
-default_image_folder = Path.home() / "Pictures"
-env = path.dirname(getenv('APPDATA'))
-default_wbox_save_folder = env+"/LocalLow/mkarpenko/WorldBox/saves/save6/map.wbox"
-filepath_out = r"c:\Users\gloop\AppData\LocalLow\mkarpenko\WorldBox\saves\save6\map.wbox"
+if os.path.isfile(config_file_path):
+    with open(config_file_path) as f:
+        data = f.read()
+        if data:
+            data = json.loads(data)
+        else:
+            data = default_config
+            generate_config_file()
+    use_explosives = data["use_explosives"]
+    use_grey_goo = data["use_grey_goo"]
+    use_dithering = data["use_dithering"]    
+    use_water_bomb = data["use_water_bomb"]
+    use_snow_mountains = data["use_snow_mountains"]
+    use_water = data["use_water"]
+    show_image = data["show_image"]
+    image_scale = data["image_scale"]
+    input_file_path = data["input_file_path"]
+    output_file_path = data["output_file_path"]
+else:
+    generate_config_file()
 
-main_cfg_fp = r"main.cfg"
-CHUNK_SIZE = 64
-DEFAULT_RES = 4,4
-res = [DEFAULT_RES[0],DEFAULT_RES[1]] #avoiding directly referencing it, since this is going to be mutated
-res_tiles = [res[0]*CHUNK_SIZE,res[1]*CHUNK_SIZE]
-window_size = 500,700
+TILE_PALETTE={ 
+    'hills': '5b5e5c',
+    'mountains': '414545',
+    'soil_high:frozen_low': 'bad5d3',
+    'soil_low:frozen_high': 'd3e4e3',
+    'soil_high:permafrost_low': '8cacc8',
+    'soil_low:permafrost_high': 'adc7dc',
+    'deep_ocean:snow_sand': '9bcfcc',
+    'deep_ocean:ice': 'a2cce7',
+    'soil_high:tumor_low': 'ed5182',
+    'soil_low:tumor_high': 'fd1863',
+    'soil_high:biomass_low': '45c842',
+    'soil_low:biomass_high': '41a840',
+    'soil_high:pumpkin_low': '8f9339',
+    'soil_low:pumpkin_high': '696c02',
+    'soil_high:cybertile_low': '9ea6a3',
+    'soil_low:cybertile_high': '858886',
+    'deep_ocean:road': 'bc9579',
+    'deep_ocean:fuse': '804a4a',
+    'deep_ocean:field': 'a16238',
+    'soil_high:jungle_low': '459d51',
+    'soil_low:jungle_high': '1f7020',
+    'soil_high:swamp_low': '4b473d',
+    'soil_low:swamp_high': '443e34',
+    'soil_high:wasteland_low': '7a8868',
+    'soil_low:wasteland_high': '677155',
+    'soil_high:desert_low': 'e5c56d',
+    'soil_low:desert_high': 'e1ba5a',
+    'soil_high:crystal_low': '60d8cd',
+    'soil_low:crystal_high': '5ccfc4',
+    'soil_high:candy_low': 'ed8ba3',
+    'soil_low:candy_high': 'f0819d',
+    'soil_high:lemon_low': 'cee470',
+    'soil_low:lemon_high': '8acf55',
+    'soil_high:grass_low': '77a542',
+    'soil_low:grass_high': '536137',
+    'soil_high:savanna_low': 'daa11e',
+    'soil_low:savanna_high': 'c58c1a',
+    'soil_high:enchanted_low': '87d566',
+    'soil_low:enchanted_high': '74af52',
+    'soil_high:mushroom_low': '63713f',
+    'soil_low:mushroom_high': '556338',
+    'soil_high:corrupted_low': '6a5268',
+    'soil_low:corrupted_high': '523e50',
+    'soil_high:infernal_low': '963425',
+    'soil_low:infernal_high': '67362c',
+    'sand': 'f2e395',
+    'soil_low': 'e2934b',
+    'soil_high': 'b66f3a',
+    'lava0': 'fc4921',
+    'lava1': 'fda800',
+    'lava2': 'fdfd00',
+    'lava3': 'fdfd00'
+}
 
+if use_grey_goo: #probably better to *remove* tiles from the tilemap if a flag isn't enabled
+    TILE_PALETTE|={
+        'grey_goo': '575b88'
+    }
+if use_explosives:
+    TILE_PALETTE|={
+        'soil_low:tnt': 'a00000',
+        'soil_low:fireworks': 'b23cca',
+        'soil_low:tnt_timed': '7e0000',
+        'soil_low:landmine': '990000',
+    }
 
-def hex_to_rgb(h:str)->list[int,int,int]:
+if use_water_bomb:
+    TILE_PALETTE|={
+    'soil_low:water_bomb': '6d00cc',     
+    }
+if use_water:
+    TILE_PALETTE|={
+        'deep_ocean': '3370cc',
+        'close_ocean': '4084e2',
+        'shallow_waters': '55aef0',
+        'pit_deep_ocean': '898989',
+        'pit_close_ocean': 'a0a0a0',
+        'pit_shallow_waters': 'c1c1c1',
+        'border_water': '3370cc',
+        'border_pit': '3370cc',
+    }
+if use_snow_mountains:
+    TILE_PALETTE|={
+        'hills:snow_block': 'c0cac9',
+        'mountains:snow_block': 'ffffff',
+    }
+
+def hex_to_rgb(h:str) -> list[int,int,int]:
     l = [int(h[i : i + 2], 16) for i in range(0, 6, 2)]
     return l
 
-def flatten(l:list)->list: return [i for sublist in l for i in sublist]
+tile_types,palette_colors = list(TILE_PALETTE.keys()),TILE_PALETTE.values()
+palette_colors = [hex_to_rgb(i) for i in palette_colors]
+palette_colors = [i for l in palette_colors for i in l]
+CHUNK_SIZE = 64
 
-def quantize_to_palette(
-    im:Image.Image,
-    colors:list[list[int,int,int]],
-    dither:bool=True
-)->Image.Image:
-    if len(colors):
-        colors_flat = flatten(colors)
-        p_img = Image.new('P', (1, 1))
-        p_img.putpalette(colors_flat)
-        if im.mode != "RGB": im = im.convert("RGB")
-        im = im.quantize(palette=p_img, dither=dither)
-        return im
+def convert_image(image) -> tuple[Image.Image,int,int]:
+    p_img = Image.new('P', (16, 16))
+    p_img.putpalette(palette_colors + [0]*(768 - len(palette_colors))) 
+    image = image.convert("RGB")
+    image = image.resize(image_scale)
+
+    w,h = image.size
+    chunk_w,chunk_h = (w // CHUNK_SIZE),(h // CHUNK_SIZE)
+    size = (chunk_w * CHUNK_SIZE,chunk_h * CHUNK_SIZE)
+    image = image.resize(size)
+    image = image.transpose(method=Image.Transpose.FLIP_TOP_BOTTOM)
+    if use_dithering:
+        dither_mode = Image.Dither.FLOYDSTEINBERG
     else:
-        print("Error: List of colors is empty!")
-def update_resolution(r:list[int,int]) -> None:
-    #i guess mutating is better than globals
-    res[0]=max(1,r[0])
-    res[1]=max(1,r[1])
-    res_tiles[0] = res[0]*CHUNK_SIZE
-    res_tiles[1] = res[1]*CHUNK_SIZE
+        dither_mode = 0
+    converted_image = image.quantize(palette=p_img, dither=dither_mode)
+    #applying a palette to an image with pillow is weird
+    #i'm not aware of a better way of doing it than this, and it's only done once so whatever
+    return converted_image,chunk_w,chunk_h
 
-
-update_resolution(DEFAULT_RES)
-
-tile_palette = {}
-tile_categories = {}
-tile_names = {}
-tile_names_reverse = {}
-world_ages = {}
-world_laws = {}
-world_stats = {}
-stylesheets = RawConfigParser()
-main_cfg = RawConfigParser()
-
-def config_to_dict(c):
-    d = {}
-    for name,vals in c.items():
-        l = {}
-        for k,v in vals.items():
-            l[k]=v
-        d[name]=l
-    return d
-
-def load_configs() -> None:
-    main_cfg.clear()
-    main_cfg.read(main_cfg_fp)
-    defs = main_cfg["Definition Files"]
-
-    stylesheets.clear()
-    stylesheets.read(defs["stylesheets"])
-
-    world_stats.clear()
-    for k,v in main_cfg["World Stats"].items(): world_stats[k]=v
-
-    world_laws.clear()
-    for k,v in main_cfg["World Laws"].items(): world_laws[k]=v
-
-    world_ages.clear()
-    for k,v in main_cfg["World Ages"].items(): world_ages[k]=v
-
-    with open(defs["tile_types"]) as f:
-        tile_data = f.read()
-        json_data = json.loads(tile_data)
-        tile_palette.clear()
-        for k,v in json_data.items():
-            tile_palette[k] = v
-
-    with open(defs["tile_categories"]) as f:
-        tile_data = f.read()
-        tile_categories.clear()
-        json_data = json.loads(tile_data)
-        for k,v in json_data.items():
-            tile_categories[k] = v
-
-    with open(defs["tile_names"]) as f:
-        tile_data = f.read()
-        json_data = json.loads(tile_data)
-        tile_names.clear()
-        tile_names_reverse.clear()
-        for k,v in json_data.items():
-            tile_names[k] = v
-            tile_names_reverse[v] = k
-
-load_configs()
-
-im = Image.new("RGB",res_tiles)
-tiles_enabled_disabled = {}
-tilemap = list(tile_palette.keys())
-
-def generate_tile_data(data:list[int],res:list[int,int]) -> tuple[list,list]:
-    """
-    Returns a list of tile IDs and tile counts from an array of indices.  
-    The format uses tilemap as a palette, then each tile ID is an index in that palette.  
-    It's run-length encoded into two arrays, one for the tile IDs and one for the amount of those tiles.
-    """
-    tile_ids,tile_amts = [],[] #rows
-    previous_tile = None
-
-    ids,amts = [],[] #entries within a row
-    total_amt = 0 #total amount of tiles
-    data_len = res[0]*res[1]
-
-    assert len(data)==data_len, f"length of data array is {len(data)}: should be {data_len}"
-
-    for idx,tile in enumerate(data):
-        if not idx & 15:
-            window.loading_bar.setValue(int((idx/data_len)*90))
-
-        if total_amt==res[0]: #end of row 
-            tile_ids.append(ids)
-            tile_amts.append(amts)
-            ids,amts = [tile],[0]
-            total_amt = 0
-
-        if tile != previous_tile: #new tile, reset count
-            ids.append(tile)
-            amts.append(1)
-        else: amts[-1] += 1
-
-        previous_tile = tile 
-        total_amt += 1
-
-    tile_ids.append(ids)
-    tile_amts.append(amts)
-
-    assert len(tile_ids) == len(tile_amts) == res[1] , f"Tilearray size is {len(tile_ids)}: should be {res[1]}"
-
-    return tile_ids,tile_amts
-
-def generate_map_data(
-    tilemap:list[str],
-    tile_data:tuple[list,list],
-) -> dict[str,Any]:
-    laws = [{"name": "world_law_"+k,"boolVal":v} for k,v in world_laws.items()]
-    laws += [{"name": "age_"+k,"boolVal":v} for k,v in world_ages.items()]
-    tiles,tile_amts = tile_data
+world_laws = [{"name": "world_law_"+k,"boolVal":v} for k,v in laws.items()]
+world_laws += [{"name": "age_"+k,"boolVal":v} for k,v in ages.items()]
+l = []
+w,h=128,128
+max_iter = 100
+offset = -2.3,-1.5
+scale = 3,3
+dataaa = []
+frozen_tiles = []
+"""def mandelbrot(c):
+    z = 0
+    i = 0
+    while abs(z)<2 and i<max_iter:
+        z = c + z*z
+        i+=1
+    return i
+i = 0
+for y in range(h):
+    for x in range(w):
+        z = complex(
+            ((x/w)*scale[0])+offset[0],
+            ((y/h)*scale[1])+offset[1]
+        )
+        m = mandelbrot(z)
+        if m==max_iter:
+            dataaa.append(i)
+        if 0.1<=(m/max_iter)<1:
+            frozen_tiles.append(i)
+        i+=1"""
+def generate_map_data(tile_data) -> dict: #tf would i even hint json as
+    tiles,tile_amounts = tile_data
+    
     map_data = {
-        "saveVersion":main_cfg["Misc."]["save_version"],
-        "width":res[0],"height":res[1],
-        "mapStats":world_stats,
-        #should probably add a selector for these, like for world laws
+        "saveVersion":13,
+        "width":map_width,"height":map_height,
+        "mapStats":{"name" : "Generated","month":4,"year":0,"worldTime":0,"deaths":0,"housesDestroyed":0,"population":0},
         "worldLaws":{ 
-            "list":laws
+            "list":world_laws
         },
-        "tilemap":tilemap,#+["mountains"]*(128-len(tilemap)),
+        "tileMap":tile_types+["mountains"]*(128-len(tile_types)),
         "tileArray":tiles,
-        "tileAmounts":tile_amts,
-        "fire":[],#*maybe* add fire, but probably not in this
-        "frozen_tiles":[],#same thing for this too
-        "tiles" : [],#no clue what this does, even really old versions of the save format don't utilize this
-        #only leaving it in for posterity
-        "cities" : [],#these last four, besides maybe buildings, are likely out of the scope of this tool
+        "tileAmounts":tile_amounts,
+        "fire":dataaa,
+        "frozen_tiles":frozen_tiles,
+        "tiles" : [],
+        "cities" : [],
         "actors" : [],
         "buildings" : [],
         "kingdoms" : []
     }
     return map_data
 
-tiles_enabled_disabled = {k:True for k in tilemap}
-def get_tile_colors()->tuple[list,list]:
-    tile_colors= []
-    tiles_enabled = []
-    for k,v in tiles_enabled_disabled.items():
-        if v:
-            col = tile_palette.get(k,"ff00ff")#fallback color in case of invalid tile
-            tile_colors.append(hex_to_rgb(col))
-            tiles_enabled.append(k)
-    return tile_colors,tiles_enabled
+def key_in_dict_tuple(n,d) -> bool: # ???
+    return n in [i[0] for i in d.keys()]
+def get_index(n,d): # what
+    if key_in_dict_tuple(n,d):
+        return max([i[1] for i in d.keys() if i[0]==n])
+    return 0
 
-class MainWindow(wdg.QMainWindow):
+def progress_bar(length:int,n:float) -> str:
+    amount_complete = int(n*length)
+    return "#"*amount_complete+("."*(length-(amount_complete)))
 
-    def __init__(self):
-        super().__init__()
-        self.use_dither = True
-        self.setWindowTitle("Worldbox - Image To Map")
-        icon_path = path.join(main_cfg["Definition Files"]["icons_folder"],"wbox_image_to_map.ico")
-        icon_path = icon_path.replace("\\","/")
-        self.setWindowIcon(QIcon(icon_path))
-        self.setStyleSheet(stylesheets["All"]["window"]) 
-        self.img_preview = im.resize(PREVIEW_SIZE)
-        self.img_main = im
-        main = wdg.QFrame()
+def display_progress(n,total):
+    print(f"{(n/total)*100:.0f}% Complete.. "+progress_bar(30,(n/total)),end=" \r")
 
-        main.setFrameStyle(0x40)
-        main.setFrameShape(wdg.QFrame.Shape.Box)
+def generate_tile_data(f:Image.Image) -> list: #why did i call this 'f'???????
+    print(f.size)
+    #also i can NOT be bothered to hint this properly right now, i don't remember how this tilemap structure BS works
+    data = [0]+list(f.getdata())
+    tiles,tile_amounts = [],[]
+    current_tiles={}
+    amt = 0
+    previous_tile = 0
+    tile_index = 0
+    #this entire bit is evil, but so is the algorithm the game uses, so whatever ¯\_(ツ)_/¯
+    for idx,tile in enumerate(data):
 
-        self.layout_main = wdg.QVBoxLayout(main)
-        main.setLayout(self.layout_main)
-        filesel = wdg.QFileDialog(self)
-        filesel.setVisible(False)
-        self.setCentralWidget(main)
+        if int(idx%(len(data)/100))==0:
+            display_progress(idx,len(data))
 
-        self.img_display_lbl = wdg.QLabel("")
-        self.img_display_lbl.setScaledContents(True)
-        self.img_display_lbl.setFixedSize(*PREVIEW_SIZE)
-        self.update_image(self.img_main)
-        self.layout_main.addWidget(self.img_display_lbl)
-
-        self.init_buttons() #this is just to make __init__ less monolithic
-        self.layout_main.addSpacerItem(wdg.QSpacerItem(1,20))
-        self.init_res_selector()
-        
-        self.layout_main.addSpacerItem(wdg.QSpacerItem(1,20))
-        self.btn_reload_cfg.setVisible(True)
-        self.layout_main.addWidget(self.btn_reload_cfg)
-
-        self.loading_bar = wdg.QProgressBar()
-        self.loading_bar.isVisible = False
-        self.loading_bar.setStyleSheet(stylesheets["All"]["progress_bar"])
-        self.layout_main.addWidget(self.loading_bar)
-        dither_chkbox = wdg.QCheckBox(self)
-        dither_chkbox.setChecked(True)
-        dither_chkbox.setText("Use Dithering")
-        dither_chkbox.stateChanged.connect(lambda : self.set_dither(dither_chkbox.isChecked()))
-        self.layout_main.addWidget(dither_chkbox)
-        self.init_tabs()
-
-    def set_dither(self,b:bool)->None:
-        self.use_dither = b
-        self.update_image(self.img_main)
-
-    def init_buttons(self)->None:
-        self.btn_map_create = wdg.QPushButton("Create Map")
-        self.btn_map_create.setFixedSize(80,20)
-        self.btn_map_create.clicked.connect(lambda : self.btn_press("create_map"))
-        self.btn_map_create.setStyleSheet(stylesheets["All"]["buttons"])
-        self.layout_main.addWidget(self.btn_map_create)
-
-        self.btn_map_create = wdg.QPushButton("Open Image")
-        self.btn_map_create.setFixedSize(80,20)
-        self.btn_map_create.clicked.connect(lambda : self.btn_press("open_image"))
-        self.btn_map_create.setStyleSheet(stylesheets["All"]["buttons"])
-        self.layout_main.addWidget(self.btn_map_create)
-
-        self.btn_reload_cfg = wdg.QPushButton("Reload Config")
-        self.btn_reload_cfg.setFixedSize(80,20)
-        self.btn_reload_cfg.clicked.connect(lambda : self.btn_press("reload_cfg"))
-        self.btn_reload_cfg.setStyleSheet(stylesheets["All"]["buttons"])
-
-    def enable_disable_category(self,cat:str,b:bool)->None:
-        global tiles_enabled_disabled #ugh
-        for i in self.chkbox_categories[cat]:
-            i.setChecked(b)
-            tiles_enabled_disabled[tile_names_reverse[i.text()]] = b
-            
-        self.update_image(self.img_main)
-
-    def init_res_selector(self)->None:
-        nest_wdg = wdg.QFrame()
-        nest_wdg.setFixedWidth(102)
-        nest_wdg.setFrameStyle(0x40)
-        nest_wdg.setFrameShape(wdg.QFrame.Shape.Box)
-        res_selector_lbl = wdg.QLabel("Resolution:",nest_wdg)
-        res_selector_lbl.setFixedHeight(13)
-        self.layout_main.addWidget(res_selector_lbl)
-        
-        res_box = wdg.QHBoxLayout(nest_wdg)
-        res_box.addSpacing(1)
-
-        width_sel = wdg.QSpinBox(nest_wdg)
-        width_sel.setFixedSize(36,30)
-        width_sel.setRange(1,256)
-        width_sel.setValue(DEFAULT_RES[0])
-        width_sel.setStyleSheet(stylesheets["All"]["spinbox"])
-        width_sel.valueChanged.connect(
-            lambda:update_resolution((width_sel.value(),res[1]))
-        )
-        res_box.addWidget(width_sel)
-
-        height_sel = wdg.QSpinBox(nest_wdg)
-        height_sel.setFixedSize(36,30)
-        height_sel.setRange(1,256)
-        height_sel.setValue(DEFAULT_RES[1])
-        height_sel.setStyleSheet(stylesheets["All"]["spinbox"])
-        height_sel.valueChanged.connect(
-            lambda:update_resolution((res[0],height_sel.value()))
-        )
-        res_box.addWidget(height_sel,alignment=core.Qt.AlignmentFlag.AlignLeft)
-        self.layout_main.addWidget(nest_wdg)
-
-    def init_tabs(self)->None:
-        self.tile_buttons = []
-        self.chkbox_categories = {}
-        self.tabs = wdg.QTabWidget(self)
-        self.tabs.setTabPosition(wdg.QTabWidget.TabPosition.South)
-        self.tabs.setMovable(True)
-        for tab_name,data in tile_categories.items():
-            self.chkbox_categories[tab_name] = []
-            tiles_list = wdg.QListWidget(self)
-            item = wdg.QListWidgetItem("")
-
-            button_wdg = wdg.QWidget(self)
-            button_wdg.setFixedHeight(100)
-            button_wdg.setVisible(False)
-            item_layout = wdg.QHBoxLayout()
-        
-            enable_all_button = wdg.QPushButton("Enable All")
-            enable_all_button.setFixedSize(80,20)
-            enable_all_button.setStyleSheet(stylesheets["All"]["buttons"])
-            enable_all_button.setObjectName(tab_name)
-            enable_all_button.clicked.connect(
-                lambda _=tab_name, instance=enable_all_button:
-                    self.enable_disable_category(instance.objectName(),True))
-            item_layout.addWidget(enable_all_button,alignment=core.Qt.AlignmentFlag.AlignTop)
-
-            disable_all_button = wdg.QPushButton("Disable All")
-            disable_all_button.setFixedSize(80,20)
-            disable_all_button.setStyleSheet(stylesheets["All"]["buttons"])
-            disable_all_button.setObjectName(tab_name)
-            disable_all_button.clicked.connect(
-                lambda _=tab_name, instance=disable_all_button:
-                    self.enable_disable_category(instance.objectName(),False))
-            item_layout.addWidget(disable_all_button,alignment=core.Qt.AlignmentFlag.AlignLeft|core.Qt.AlignmentFlag.AlignTop)
-            
-            button_wdg.setLayout(item_layout)
-            tiles_list.addItem(item)
-            tiles_list.setItemWidget(item,button_wdg)
-
-            item.setSizeHint(button_wdg.sizeHint())
-            for tile_type,enabled in data.items():
-                icon_path = path.join(main_cfg["Definition Files"]["tile_images_folder"],tile_type.replace(":","!")+".png")
-                icon_pixmap = QPixmap(icon_path)
-                if icon_pixmap.isNull():
-                    icon_pixmap = QPixmap(path.join(main_cfg["Definition Files"]["icons_folder"],"missing_tile.png"))
-                    logger.warning(f'[init_tabs] Tile "{item.text()}"" has no icon.')
-                item_icon = QIcon(icon_pixmap)
-
-                tile_name = tile_names.get(tile_type,f"Unknown Tile ({tile_type})")
-                box_holder = wdg.QListWidgetItem(tile_name)
-                #box_holder
-                chkbox = wdg.QCheckBox()
-                chkbox.setIcon(item_icon)
-                box_holder.setFlags(box_holder.flags() | core.Qt.ItemFlag.ItemIsUserCheckable)
-                tiles_enabled_disabled[tile_type]=enabled
-                chkbox.setChecked(enabled)
-                chkbox.setText(tile_name)
-                chkbox.setObjectName(tile_type)
-                chkbox.checkStateChanged.connect(lambda _,instance=chkbox:self.on_checkbox_clicked(instance))
-                tiles_list.addItem(box_holder)
-                tiles_list.setItemWidget(box_holder,chkbox)
-                self.tile_buttons.append(chkbox)
-                self.chkbox_categories[tab_name].append(chkbox)
-            tiles_list.setStyleSheet(stylesheets["All"]["list"])
-            #tiles_list.itemChanged.connect(self.on_checkbox_clicked)
-            self.tabs.addTab(tiles_list, tab_name)
-        self.tabs.setStyleSheet(stylesheets["All"]["tabs"]) 
-        self.layout_main.addWidget(self.tabs)
-
-    def open_file_sel(self,mode:str="in")->None|str:#add output select too
-        if mode == "in":
-            filename, _ = wdg.QFileDialog.getOpenFileName(self, "Open Image", 
-                default_image_folder.as_uri(), "Image Files (*.png *.jpg *.bmp)")
-            if filename:
-                with Image.open(filename) as im:
-                    self.update_image(im)
-        elif mode == "out":
-            ftypes = "Worldbox Save File (*.wbox)"
-
-            filename, _ = wdg.QFileDialog.getSaveFileName(self,"Save Map",default_wbox_save_folder,ftypes,options=wdg.QFileDialog.Option.DontConfirmOverwrite)
-            return filename
-
-    def update_image(self,im):
-        if im is not self.img_main:
-            self.img_main = im
-            self.img_preview = self.img_main.resize(PREVIEW_SIZE)
-        tile_colors = get_tile_colors()[0]
-        
-        if tile_colors:
-            preview = quantize_to_palette(self.img_preview,tile_colors,dither=self.use_dither)
-            im_qt = ImageQt(preview)
-            pixmap = QPixmap.fromImage(im_qt)
+        if sum(current_tiles.values())==f.size[0]:
+            tiles.append([i[0] for i in current_tiles.keys()])
+            tile_amounts.append([i for i in current_tiles.values()])
+            current_tiles = {}
+       
+        #tile_index = get_index(tile,current_tiles)
+        if tile==previous_tile:
+            amt+=1
         else:
-            fallback_img_path = path.join(main_cfg["Definition Files"]["icons_folder"],"fallback_preview.png")
-            pixmap = QPixmap(fallback_img_path) #display a fallback image
-
-        self.img_display_lbl.setPixmap(pixmap)
-
-    def btn_press(self,btn_type):
-        if btn_type == "create_map":
-            self.create_map()
-        elif btn_type == "open_image":
-            self.open_file_sel()
-        elif btn_type == "reload_cfg":
-            load_configs()
-            reload_enabled_tiles()
-
-    def on_checkbox_clicked(self, item):
-        tile_type = tile_names_reverse.get(item.text(),None)
-        if tile_type is None: #this shouldn't happen unless the config is malformed, i.e an extra tile in tile_categories
-            logger.error(f"[on_checkbox_clicked] tile {item.text()} is invalid!")
+            tile_index+=1
+    
+        if (tile,tile_index) in current_tiles: #
+            current_tiles[(tile,tile_index)]+=1
         else:
-            tiles_enabled_disabled[tile_type]=item.isChecked()
-            self.update_image(self.img_main)
+            current_tiles[(tile,tile_index)]=1
         
-    def create_map(self,compress=True)->Any:
-        self.loading_bar.setVisible(True)
+        previous_tile=tile
+    print(len(tiles),len(tile_amounts),"\n\n\n")
+    return tiles,tile_amounts
 
-        map_img = self.img_main.resize(res_tiles)
-        tile_cols,tiles_enabled = get_tile_colors()
-        if len(tiles_enabled):
-            map_img = quantize_to_palette(map_img,tile_cols,dither=self.use_dither)
-            map_img = map_img.transpose(Image.Transpose.FLIP_TOP_BOTTOM)
-            tile_data = generate_tile_data(map_img.getdata(),res_tiles)
-            map_data = generate_map_data(tiles_enabled,tile_data)
-            window.loading_bar.setValue(100)
-            out_fp = self.open_file_sel(mode="out")
-            if out_fp:
-                with open(out_fp,"wb") as f:
-                    if compress:
-                        f.write(zlib.compress(json.dumps(map_data).encode("utf8")))
-                    else:
-                        f.write(json.dumps(map_data))
-            else:
-                logger.error("[create_map] no valid filepath!")
-        else:
-            logger.error("[create_map] no enabled tiles!")
-            wdg.QMessageBox.critical(self, "Error", "No Tiles Selected!")
+with Image.open(input_file_path) as im:
+    im2,map_width,map_height = convert_image(im)
+    
+if show_image:  
+    im2.transpose(method=Image.Transpose.FLIP_LEFT_RIGHT).show()
 
-app = wdg.QApplication([])
-window = MainWindow()
-window.resize(core.QSize(*window_size))
-window.show()
+tile_data = generate_tile_data(im2)
+map_data = generate_map_data(tile_data)
 
-def reload_enabled_tiles():
-    global tiles_enabled_disabled
-
-    for val in tile_categories.values():
-        for tile_type,enabled in val.items():
-            tiles_enabled_disabled[tile_type]=enabled
-    for i in window.tile_buttons:
-        tile_name = i.text()
-        tile_type = tile_names_reverse.get(tile_name,None)
-        tile_is_enabled = tiles_enabled_disabled.get(tile_type,None)
-        if tile_is_enabled is not None:
-            i.setChecked(tile_is_enabled)
-app.exec()
+with open(output_file_path,"wb") as f:
+    f.write(zlib.compress(json.dumps(map_data).encode("utf8")))
+#for whatever reason there was a redundant file write here so it made two copies of it, no clue why
